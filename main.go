@@ -18,6 +18,7 @@ type Cli struct {
 	Prefix        string `help:"HTTP path prefix."`
 	DataDir       string `help:"Data directory." default:"data"`
 	ListenAddress string `help:"Listen address." default:":3000"`
+	NoEncode      bool   `help:"Disable encoding to x265." default:"false"`
 
 	recorder *recorder
 }
@@ -32,7 +33,7 @@ func main() {
 		LockSystem: webdav.NewMemLS(),
 	}
 
-	cli.recorder = NewRecorder(cli.DataDir)
+	cli.recorder = NewRecorder(cli.DataDir, !cli.NoEncode)
 
 	r := chi.NewRouter()
 

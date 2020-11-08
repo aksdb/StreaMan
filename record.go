@@ -21,13 +21,15 @@ type recording struct {
 type recorder struct {
 	mtx     sync.Mutex
 	dataDir string
+	encode  bool
 	running map[string]*recording
 	errored map[string]*recording
 }
 
-func NewRecorder(dataDir string) *recorder {
+func NewRecorder(dataDir string, encode bool) *recorder {
 	return &recorder{
 		dataDir: dataDir,
+		encode:  encode,
 		running: map[string]*recording{},
 		errored: map[string]*recording{},
 	}
@@ -38,11 +40,16 @@ func (r *recorder) Record(channel string) {
 	defer r.mtx.Unlock()
 
 	rec := &recording{
-		filename:  fmt.Sprintf("%s_%s.mp4", channel, time.Now().Format("20060102_150405")),
+		filename:  fmt.Sprintf("%s_%s.ts", channel, time.Now().Format("20060102_150405")),
 		startTime: time.Now(),
 	}
 	fullPath := path.Join(r.dataDir, rec.filename)
-	recordCmdline := fmt.Sprintf("streamlink https://twitch.tv/%s best -O | ffmpeg -i pipe:0 -ss 00:00:20.0 -vcodec libx265 -crf 28 -acodec copy \"%s\"", channel, fullPath)
+	encodeParams := "-vcodec copy"
+	if r.encode {
+		encodeParams = "-vcodec libx265 -crf 28"
+	}
+
+	recordCmdline := fmt.Sprintf("streamlink https://twitch.tv/%s best -O | ffmpeg -i pipe:0 -ss 00:00:20.0 %s -acodec copy \"%s\"", channel, encodeParams, fullPath)
 	rec.cmd = exec.Command("/bin/bash", "-c", recordCmdline)
 	rec.cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
