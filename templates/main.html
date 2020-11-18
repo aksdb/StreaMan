@@ -35,8 +35,18 @@
 <h1>Record</h1>
 
 <form action="./record" method="post">
-    <label for="channel">Channel: </label> <input name="channel" id="channel"/>
-    <input type="submit" value="Record"/>
+    <div>
+        <label for="channel">Channel: </label> <input name="channel" id="channel"/>
+    </div>
+    {{ if .CanTranscode }}
+        <div>
+            <label for="transcode">Transcode video to h265</label>
+            <input type="checkbox" name="transcode" id="transcode"/>
+        </div>
+    {{ end }}
+    <div>
+        <input type="submit" value="Record"/>
+    </div>
 </form>
 
 <h1>Failed Recordings</h1>

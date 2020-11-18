@@ -33,7 +33,7 @@ func main() {
 		LockSystem: webdav.NewMemLS(),
 	}
 
-	cli.recorder = NewRecorder(cli.DataDir, !cli.NoEncode)
+	cli.recorder = NewRecorder(cli.DataDir)
 
 	r := chi.NewRouter()
 
@@ -61,7 +61,8 @@ func main() {
 				http.Error(w, "invalid channel", http.StatusBadRequest)
 				return
 			}
-			cli.recorder.Record(channel)
+			transcode := !cli.NoEncode && r.FormValue("transcode") == "on"
+			cli.recorder.Record(channel, transcode)
 			http.Redirect(w, r, "./", http.StatusFound)
 		})
 
@@ -106,9 +107,10 @@ type FileModel struct {
 }
 
 type Model struct {
-	Recordings []RecordingModel
-	Failures   []FailureModel
-	Files      []FileModel
+	Recordings   []RecordingModel
+	Failures     []FailureModel
+	Files        []FileModel
+	CanTranscode bool
 }
 
 func buildModel(cli *Cli) (Model, error) {
@@ -148,6 +150,8 @@ func buildModel(cli *Cli) (Model, error) {
 			Reason: rec.err.Error(),
 		})
 	}
+
+	model.CanTranscode = !cli.NoEncode
 
 	return model, nil
 }
@@ -190,8 +194,18 @@ var pageTemplate = template.Must(template.New("page").Parse(`
 <h1>Record</h1>
 
 <form action="./record" method="post">
-    <label for="channel">Channel: </label> <input name="channel" id="channel"/>
-    <input type="submit" value="Record"/>
+    <div>
+        <label for="channel">Channel: </label> <input name="channel" id="channel"/>
+    </div>
+    {{ if .CanTranscode }}
+        <div>
+            <label for="transcode">Transcode video to h265</label>
+            <input type="checkbox" name="transcode" id="transcode"/>
+        </div>
+    {{ end }}
+    <div>
+        <input type="submit" value="Record"/>
+    </div>
 </form>
 
 <h1>Failed Recordings</h1>

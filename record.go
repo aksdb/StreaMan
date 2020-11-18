@@ -21,21 +21,19 @@ type recording struct {
 type recorder struct {
 	mtx     sync.Mutex
 	dataDir string
-	encode  bool
 	running map[string]*recording
 	errored map[string]*recording
 }
 
-func NewRecorder(dataDir string, encode bool) *recorder {
+func NewRecorder(dataDir string) *recorder {
 	return &recorder{
 		dataDir: dataDir,
-		encode:  encode,
 		running: map[string]*recording{},
 		errored: map[string]*recording{},
 	}
 }
 
-func (r *recorder) Record(channel string) {
+func (r *recorder) Record(channel string, transcode bool) {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
@@ -45,7 +43,7 @@ func (r *recorder) Record(channel string) {
 	}
 	fullPath := path.Join(r.dataDir, rec.filename)
 	encodeParams := "-vcodec copy"
-	if r.encode {
+	if transcode {
 		encodeParams = "-vcodec libx265 -crf 28"
 	}
 
